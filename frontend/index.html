@@ -325,15 +325,7 @@ window.addEventListener("mouseup", endDraw);
 sigCanvas.addEventListener("touchstart", startDraw, { passive: false });
 sigCanvas.addEventListener("touchmove", moveDraw, { passive: false });
 window.addEventListener("touchend", endDraw, { passive: false });
-async function postJson(baseUrl, payload) {
-  const url = baseUrl.includes("?") ? baseUrl : baseUrl; // base bleibt base
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify(payload)
-  });
-  return await res.json();
-}
+
 
 function getSessionPayloadFromUi() {
   const participants = Array.from(selected.values()).map(p => ({
@@ -362,7 +354,6 @@ function validateBeforeSave(session) {
   const missing = session.participants.filter(p => !p.signatureDataUrl);
   if (missing.length) throw new Error("Unterschrift fehlt bei: " + missing.map(m => m.name).join(", "));
 }
-
 saveSessionBtn.addEventListener("click", async () => {
   const base = apiUrlInput.value.trim();
   if (!base) {
@@ -376,21 +367,27 @@ saveSessionBtn.addEventListener("click", async () => {
 
     result.textContent = "Speichere Session…";
 
-    const data = await postJson(base, { route: "session.create", session });
+    const sessionParam = encodeURIComponent(JSON.stringify(session));
+    const url = base.includes("?")
+      ? `${base}&route=session.create&session=${sessionParam}`
+      : `${base}?route=session.create&session=${sessionParam}`;
+
+    const res = await fetch(url, { method: "GET" });
+    const data = await res.json();
 
     if (!data.ok) {
       result.innerHTML = '<span class="err">Fehler: ' + escapeHtml(data.error || "unbekannt") + '</span>';
       return;
     }
 
-    // sessionId merken (für PDF im nächsten Schritt)
     localStorage.setItem("TT_SESSION_ID", data.sessionId);
-
     result.innerHTML = `<span class="ok">Session gespeichert.</span> Session-ID: <b>${escapeHtml(data.sessionId)}</b>`;
   } catch (e) {
     result.innerHTML = '<span class="err">Fehler: </span>' + escapeHtml(String(e.message || e));
   }
 });
+
+
 
   </script>
 </body>
