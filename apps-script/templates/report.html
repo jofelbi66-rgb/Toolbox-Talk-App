@@ -1,1 +1,103 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top" />
+    <meta charset="utf-8" />
+    <style>
+      /* A4 PDF-freundlich */
+      @page { size: A4 portrait; margin: 18mm; }
+      body { font-family: Arial, sans-serif; font-size: 12px; color: #111; }
+
+      h1 { font-size: 18px; margin: 0 0 6px 0; }
+      h2 { font-size: 13px; margin: 14px 0 6px 0; }
+      .muted { color: #666; }
+
+      .box { border: 1px solid #ccc; border-radius: 6px; padding: 10px; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #ccc; padding: 6px; vertical-align: top; }
+      th { background: #f3f3f3; font-weight: 700; }
+
+      .meta td { border: none; padding: 2px 0; }
+      .meta td:first-child { width: 110px; color: #444; }
+
+      .summary { white-space: pre-wrap; }
+
+      .sigImg {
+        width: 180px;   /* ~5–6 cm im PDF */
+        height: auto;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background: #fff;
+      }
+
+      .small { font-size: 10px; }
+    </style>
+  </head>
+
+  <body>
+    <h1>Toolbox Talk – Dokumentation</h1>
+    <div class="muted small">Session-ID: <?= session.sessionId ?></div>
+
+    <div class="box" style="margin-top:10px;">
+      <table class="meta">
+        <tr>
+          <td><b>Datum/Uhrzeit:</b></td>
+          <td><?= session.dateTime ?></td>
+        </tr>
+        <tr>
+          <td><b>Ort:</b></td>
+          <td><?= session.site ?></td>
+        </tr>
+        <tr>
+          <td><b>Projekt:</b></td>
+          <td><?= session.project ?></td>
+        </tr>
+        <tr>
+          <td><b>Thema:</b></td>
+          <td><?= session.topic ?></td>
+        </tr>
+        <tr>
+          <td><b>Moderator:</b></td>
+          <td><?= session.trainer ?></td>
+        </tr>
+      </table>
+    </div>
+
+    <h2>Kernaussagen</h2>
+    <div class="box summary"><?= session.summary ?></div>
+
+    <h2>Teilnehmer & Unterschriften</h2>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:34px;">#</th>
+          <th>Name</th>
+          <th style="width:180px;">Firma</th>
+          <th style="width:200px;">Unterschrift</th>
+        </tr>
+      </thead>
+      <tbody>
+        <? for (var i = 0; i < (session.participants || []).length; i++) { ?>
+          <? var p = session.participants[i]; ?>
+          <tr>
+            <td><?= (i+1) ?></td>
+            <td><?= p.name ?></td>
+            <td><?= p.company ?></td>
+            <td>
+              <? if (p.signatureDataUrl) { ?>
+                <img class="sigImg" src="<?= p.signatureDataUrl ?>" />
+              <? } else { ?>
+                <span style="color:#b00;"><b>FEHLT</b></span>
+              <? } ?>
+            </td>
+          </tr>
+        <? } ?>
+      </tbody>
+    </table>
+
+    <div class="muted small" style="margin-top:10px;">
+      Erstellt am: <?= new Date().toISOString() ?>
+    </div>
+  </body>
+</html>
 
