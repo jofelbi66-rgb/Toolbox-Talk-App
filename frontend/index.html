@@ -71,7 +71,29 @@
     </div>
 
     <div class="list" id="list"></div>
+    <hr style="margin:16px 0;border:none;border-top:1px solid #eee;" />
+
+<button class="btn" id="startSignBtn">Unterschriften starten (für ausgewählte)</button>
+
+<div id="signPanel" class="box" style="display:none; margin-top:12px;">
+  <div style="font-weight:700; font-size:16px;">Unterschrift</div>
+  <div class="small" id="signInfo" style="margin-top:6px;"></div>
+
+  <div style="margin-top:10px; border:1px solid #ccc; border-radius:12px; overflow:hidden; background:#fff;">
+    <canvas id="sigCanvas" style="width:100%; height:180px; touch-action:none;"></canvas>
   </div>
+
+  <div style="display:flex; gap:10px; margin-top:10px;">
+    <button class="btn2" id="clearSigBtn" style="flex:1;">Löschen</button>
+    <button class="btn" id="saveSigBtn" style="flex:2;">Speichern & Weiter</button>
+  </div>
+
+  <div class="small muted" style="margin-top:8px;">
+    Tipp: iPad/Handy quer halten ist oft angenehmer zum Unterschreiben.
+  </div>
+</div>
+
+
 
   <script>
     const apiUrlInput = document.getElementById("apiUrl");
@@ -79,6 +101,15 @@
     const saveBtn = document.getElementById("saveBtn");
     const result = document.getElementById("result");
     const list = document.getElementById("list");
+    const startSignBtn = document.getElementById("startSignBtn");
+const signPanel = document.getElementById("signPanel");
+const signInfo = document.getElementById("signInfo");
+const sigCanvas = document.getElementById("sigCanvas");
+const clearSigBtn = document.getElementById("clearSigBtn");
+const saveSigBtn = document.getElementById("saveSigBtn");
+
+const selected = new Map(); // participantId -> participant (mit signatureDataUrl)
+
 
     // gespeicherte URL laden
     apiUrlInput.value = localStorage.getItem("TT_API_URL") || "";
@@ -99,6 +130,8 @@
 
       result.textContent = "Lade…";
       list.innerHTML = "";
+      selected.clear();
+
 
       try {
         const res = await fetch(url, { method: "GET" });
@@ -110,7 +143,6 @@
         }
 
         result.innerHTML = '<span class="ok">OK:</span> ' + data.participants.length + " Teilnehmer geladen.";
-const selected = new Map(); // participantId -> participant
 
 data.participants.forEach(p => {
   const div = document.createElement("div");
