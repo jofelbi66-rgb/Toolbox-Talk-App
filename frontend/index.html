@@ -27,13 +27,39 @@
 
 <body>
   <div class="card">
-    <h1>Toolbox Talk – Teilnehmer laden (Test)</h1>
-    <div class="small">
-      Schritt 1: Wir testen nur, ob das Frontend deine Teilnehmerliste aus Apps Script laden kann.
-    </div>
+    <h1>Toolbox Talk – Dokumentation</h1>
+<div class="small">
+  Schritt 1: Stammdaten erfassen. Schritt 2: Teilnehmer auswählen. (Unterschriften + PDF kommen als nächstes.)
+</div>
 
-    <label for="apiUrl">Apps Script Web-App URL</label>
-    <input id="apiUrl" placeholder="https://script.googleusercontent.com/...." />
+<label for="dateTime">Datum/Uhrzeit</label>
+<input id="dateTime" type="datetime-local" />
+
+<label for="site">Ort</label>
+<input id="site" placeholder="z. B. Baustelle Köln" />
+
+<label for="project">Projekt</label>
+<input id="project" placeholder="z. B. Brücke Nord" />
+
+<label for="topic">Thema</label>
+<input id="topic" placeholder="z. B. Leitern & Tritte" />
+
+<label for="trainer">Moderator</label>
+<input id="trainer" placeholder="Name" />
+
+<label for="summary">Kernaussagen</label>
+<textarea id="summary" rows="5" style="width:100%;padding:12px;border-radius:10px;border:1px solid #ccc;font-size:16px;"></textarea>
+
+<hr style="margin:16px 0;border:none;border-top:1px solid #eee;" />
+
+<label for="apiUrl">Apps Script Web-App URL</label>
+<input id="apiUrl" placeholder="https://script.googleusercontent.com/...." />
+
+
+
+<div class="row">
+  <div id="result" class="status">Noch nichts geladen.</div>
+</div>
 
     <button class="btn" id="loadBtn">Teilnehmer laden</button>
     <button class="btn2" id="saveBtn">URL speichern</button>
