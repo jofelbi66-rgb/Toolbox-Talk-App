@@ -74,6 +74,8 @@
     <hr style="margin:16px 0;border:none;border-top:1px solid #eee;" />
 
 <button class="btn" id="startSignBtn">Unterschriften starten (für ausgewählte)</button>
+   <button class="btn" id="saveSessionBtn">Session speichern</button>
+ 
 
 <div id="signPanel" class="box" style="display:none; margin-top:12px;">
   <div style="font-weight:700; font-size:16px;">Unterschrift</div>
@@ -107,6 +109,14 @@ const signInfo = document.getElementById("signInfo");
 const sigCanvas = document.getElementById("sigCanvas");
 const clearSigBtn = document.getElementById("clearSigBtn");
 const saveSigBtn = document.getElementById("saveSigBtn");
+  const saveSessionBtn = document.getElementById("saveSessionBtn");
+  const dateTimeEl = document.getElementById("dateTime");
+const siteEl = document.getElementById("site");
+const projectEl = document.getElementById("project");
+const topicEl = document.getElementById("topic");
+const trainerEl = document.getElementById("trainer");
+const summaryEl = document.getElementById("summary");
+
 
 const selected = new Map(); // participantId -> participant (mit signatureDataUrl)
 
@@ -315,6 +325,72 @@ window.addEventListener("mouseup", endDraw);
 sigCanvas.addEventListener("touchstart", startDraw, { passive: false });
 sigCanvas.addEventListener("touchmove", moveDraw, { passive: false });
 window.addEventListener("touchend", endDraw, { passive: false });
+async function postJson(baseUrl, payload) {
+  const url = baseUrl.includes("?") ? baseUrl : baseUrl; // base bleibt base
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify(payload)
+  });
+  return await res.json();
+}
+
+function getSessionPayloadFromUi() {
+  const participants = Array.from(selected.values()).map(p => ({
+    participantId: p.participantId,
+    name: p.name,
+    company: p.company,
+    signatureDataUrl: p.signatureDataUrl || ""
+  }));
+
+  return {
+    dateTime: dateTimeEl.value,
+    site: siteEl.value.trim(),
+    project: projectEl.value.trim(),
+    topic: topicEl.value.trim(),
+    trainer: trainerEl.value.trim(),
+    summary: summaryEl.value.trim(),
+    participants
+  };
+}
+
+function validateBeforeSave(session) {
+  if (!session.dateTime) throw new Error("Datum/Uhrzeit fehlt.");
+  if (!session.topic) throw new Error("Thema fehlt.");
+  if (!session.trainer) throw new Error("Moderator fehlt.");
+  if (!session.participants.length) throw new Error("Keine Teilnehmer ausgewählt.");
+  const missing = session.participants.filter(p => !p.signatureDataUrl);
+  if (missing.length) throw new Error("Unterschrift fehlt bei: " + missing.map(m => m.name).join(", "));
+}
+
+saveSessionBtn.addEventListener("click", async () => {
+  const base = apiUrlInput.value.trim();
+  if (!base) {
+    result.innerHTML = '<span class="err">Bitte Web-App URL eintragen.</span>';
+    return;
+  }
+
+  try {
+    const session = getSessionPayloadFromUi();
+    validateBeforeSave(session);
+
+    result.textContent = "Speichere Session…";
+
+    const data = await postJson(base, { route: "session.create", session });
+
+    if (!data.ok) {
+      result.innerHTML = '<span class="err">Fehler: ' + escapeHtml(data.error || "unbekannt") + '</span>';
+      return;
+    }
+
+    // sessionId merken (für PDF im nächsten Schritt)
+    localStorage.setItem("TT_SESSION_ID", data.sessionId);
+
+    result.innerHTML = `<span class="ok">Session gespeichert.</span> Session-ID: <b>${escapeHtml(data.sessionId)}</b>`;
+  } catch (e) {
+    result.innerHTML = '<span class="err">Fehler: </span>' + escapeHtml(String(e.message || e));
+  }
+});
 
   </script>
 </body>
