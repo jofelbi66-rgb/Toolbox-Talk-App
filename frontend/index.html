@@ -184,6 +184,138 @@ result.innerHTML = `<span class="ok">OK:</span> ${data.participants.length} Teil
         "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
       }[c]));
     }
+    // --- Unterschriftenstraße ---
+let signQueue = [];   // Array der ausgewählten Teilnehmer (Objekte)
+let signIndex = 0;
+let isDrawing = false;
+let lastX = 0, lastY = 0;
+
+function setupCanvas() {
+  const rect = sigCanvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+
+  // feste Höhe 180px; Breite kommt aus Layout
+  sigCanvas.width = Math.floor(rect.width * dpr);
+  sigCanvas.height = Math.floor(180 * dpr);
+
+  const ctx = sigCanvas.getContext("2d");
+  ctx.setTransform(1, 0, 0, 1, 0, 0); // reset
+  ctx.scale(dpr, dpr);
+
+  // Hintergrund weiß
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, rect.width, 180);
+
+  // Stift
+  ctx.strokeStyle = "#111";
+  ctx.lineWidth = 2;
+  ctx.lineCap = "round";
+}
+
+function clearCanvas() {
+  const ctx = sigCanvas.getContext("2d");
+  const rect = sigCanvas.getBoundingClientRect();
+  ctx.clearRect(0, 0, rect.width, 180);
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, rect.width, 180);
+}
+
+function getPos(evt) {
+  const rect = sigCanvas.getBoundingClientRect();
+  const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+  const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+  return { x: clientX - rect.left, y: clientY - rect.top };
+}
+
+function startDraw(evt) {
+  evt.preventDefault();
+  const p = getPos(evt);
+  isDrawing = true;
+  lastX = p.x; lastY = p.y;
+}
+
+function moveDraw(evt) {
+  if (!isDrawing) return;
+  evt.preventDefault();
+  const p = getPos(evt);
+  const ctx = sigCanvas.getContext("2d");
+  ctx.beginPath();
+  ctx.moveTo(lastX, lastY);
+  ctx.lineTo(p.x, p.y);
+  ctx.stroke();
+  lastX = p.x; lastY = p.y;
+}
+
+function endDraw(evt) {
+  if (!isDrawing) return;
+  evt.preventDefault();
+  isDrawing = false;
+}
+
+function openSigner(i) {
+  signIndex = i;
+  const p = signQueue[signIndex];
+  signInfo.innerHTML = `<b>${escapeHtml(p.name)}</b> – ${escapeHtml(p.company)}<br>Person ${signIndex + 1} von ${signQueue.length}`;
+  signPanel.style.display = "block";
+  setupCanvas();
+}
+
+function exportSignatureDataUrl() {
+  // Verkleinern auf ~400px Breite, damit Upload/PDF schlank bleibt
+  const srcRect = sigCanvas.getBoundingClientRect();
+  const targetW = 400;
+  const targetH = Math.max(120, Math.round(targetW * (180 / srcRect.width)));
+
+  const tmp = document.createElement("canvas");
+  tmp.width = targetW;
+  tmp.height = targetH;
+
+  const tctx = tmp.getContext("2d");
+  tctx.fillStyle = "#fff";
+  tctx.fillRect(0, 0, targetW, targetH);
+  tctx.drawImage(sigCanvas, 0, 0, targetW, targetH);
+
+  return tmp.toDataURL("image/png");
+}
+
+startSignBtn.addEventListener("click", () => {
+  if (selected.size === 0) {
+    result.innerHTML = '<span class="err">Bitte erst Teilnehmer auswählen.</span>';
+    return;
+  }
+  signQueue = Array.from(selected.values()).map(p => ({ ...p }));
+  openSigner(0);
+});
+
+clearSigBtn.addEventListener("click", () => {
+  clearCanvas();
+});
+
+saveSigBtn.addEventListener("click", () => {
+  const p = signQueue[signIndex];
+  const dataUrl = exportSignatureDataUrl();
+  p.signatureDataUrl = dataUrl;
+
+  // zurück in selected schreiben
+  selected.set(p.participantId, p);
+
+  if (signIndex + 1 < signQueue.length) {
+    openSigner(signIndex + 1);
+  } else {
+    signPanel.style.display = "none";
+    result.innerHTML = `<span class="ok">Unterschriften fertig:</span> ${selected.size} Personen unterschrieben.`;
+  }
+});
+
+// Events: Maus + Touch (iPad/Smartphone)
+sigCanvas.addEventListener("mousedown", startDraw);
+sigCanvas.addEventListener("mousemove", moveDraw);
+window.addEventListener("mouseup", endDraw);
+
+sigCanvas.addEventListener("touchstart", startDraw, { passive: false });
+sigCanvas.addEventListener("touchmove", moveDraw, { passive: false });
+window.addEventListener("touchend", endDraw, { passive: false });
+
   </script>
 </body>
 </html>
