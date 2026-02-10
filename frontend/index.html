@@ -16,6 +16,8 @@
     .row { margin-top: 12px; }
     .list { margin-top: 12px; }
     .item { display:flex; justify-content:space-between; gap:12px; padding: 12px; border: 1px solid #ddd; border-radius: 12px; background:#fff; margin-bottom:10px; }
+    .item.selected { border: 2px solid #1a73e8; }
+
     .name { font-weight: 700; }
     .company { color:#666; font-size: 12px; margin-top: 2px; }
     .status { font-size: 12px; color:#666; }
@@ -108,19 +110,37 @@
         }
 
         result.innerHTML = '<span class="ok">OK:</span> ' + data.participants.length + " Teilnehmer geladen.";
+const selected = new Map(); // participantId -> participant
 
-        data.participants.forEach(p => {
-          const div = document.createElement("div");
-          div.className = "item";
-          div.innerHTML = `
-            <div>
-              <div class="name">${escapeHtml(p.name)}</div>
-              <div class="company">${escapeHtml(p.company)}</div>
-            </div>
-            <div class="status">${escapeHtml(p.participantId)}</div>
-          `;
-          list.appendChild(div);
-        });
+data.participants.forEach(p => {
+  const div = document.createElement("div");
+  div.className = "item";
+  div.innerHTML = `
+    <div>
+      <div class="name">${escapeHtml(p.name)}</div>
+      <div class="company">${escapeHtml(p.company)}</div>
+    </div>
+    <div class="status">${escapeHtml(p.participantId)}<br><span class="small">Tippen zum Auswählen</span></div>
+  `;
+
+  div.addEventListener("click", () => {
+    if (selected.has(p.participantId)) {
+      selected.delete(p.participantId);
+      div.classList.remove("selected");
+    } else {
+      selected.set(p.participantId, p);
+      div.classList.add("selected");
+    }
+    result.innerHTML = `<span class="ok">OK:</span> ${data.participants.length} geladen. <b>${selected.size}</b> ausgewählt.`;
+  });
+
+  list.appendChild(div);
+});
+
+result.innerHTML = `<span class="ok">OK:</span> ${data.participants.length} Teilnehmer geladen. <b>0</b> ausgewählt.`;
+
+
+        
 
       } catch (e) {
         result.innerHTML = '<span class="err">Netz/JSON Fehler: </span>' + escapeHtml(String(e));
