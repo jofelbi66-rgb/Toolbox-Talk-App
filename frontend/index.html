@@ -51,6 +51,11 @@
 
 <label for="summary">Kernaussagen</label>
 <textarea id="summary" rows="5" style="width:100%;padding:12px;border-radius:10px;border:1px solid #ccc;font-size:16px;"></textarea>
+ <label style="display:flex; gap:10px; align-items:center; margin-top:10px;">
+  <input type="checkbox" id="understood" />
+  <span>Unterweisung verstanden (von allen Unterwiesenen bestätigt)</span>
+</label>
+   
 
 <hr style="margin:16px 0;border:none;border-top:1px solid #eee;" />
 
@@ -116,6 +121,7 @@ const projectEl = document.getElementById("project");
 const topicEl = document.getElementById("topic");
 const trainerEl = document.getElementById("trainer");
 const summaryEl = document.getElementById("summary");
+const understoodEl = document.getElementById("understood");
 
 
 const selected = new Map(); // participantId -> participant (mit signatureDataUrl)
@@ -342,6 +348,7 @@ function getSessionPayloadFromUi() {
     topic: topicEl.value.trim(),
     trainer: trainerEl.value.trim(),
     summary: summaryEl.value.trim(),
+    understood: !!understoodEl.checked,
     participants
   };
 }
