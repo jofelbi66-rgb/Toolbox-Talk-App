@@ -253,21 +253,39 @@ function clearCanvas() {
 
 function getPos(evt) {
   const rect = sigCanvas.getBoundingClientRect();
-  const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
-  const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
-  return { x: clientX - rect.left, y: clientY - rect.top };
-}
 
+  // Touch-Events: touchstart/touchmove -> touches[0]
+  // touchend -> changedTouches[0]
+  const t = (evt.touches && evt.touches[0]) ||
+            (evt.changedTouches && evt.changedTouches[0]);
+
+  const clientX = t ? t.clientX : evt.clientX;
+  const clientY = t ? t.clientY : evt.clientY;
+
+  return {
+    x: clientX - rect.left,
+    y: clientY - rect.top
+  };
+}
 function startDraw(evt) {
-  evt.preventDefault();
+  if (evt.cancelable) evt.preventDefault();
+
+  // NEU: verhindert “Weglaufen” auf dem Handy
+  sigCanvas.setPointerCapture(evt.pointerId);
+
   const p = getPos(evt);
   isDrawing = true;
-  lastX = p.x; lastY = p.y;
+  lastX = p.x;
+  lastY = p.y;
 }
 
+
+
 function moveDraw(evt) {
+  if (evt.cancelable) evt.preventDefault();
+
   if (!isDrawing) return;
-  evt.preventDefault();
+
   const p = getPos(evt);
   const ctx = sigCanvas.getContext("2d");
   ctx.beginPath();
@@ -281,6 +299,8 @@ function endDraw(evt) {
   if (!isDrawing) return;
   evt.preventDefault();
   isDrawing = false;
+  // NEU: Capture sauber freigeben
+  try { sigCanvas.releasePointerCapture(evt.pointerId); } catch (e) {}
 }
 
 function openSigner(i) {
@@ -338,14 +358,14 @@ saveSigBtn.addEventListener("click", () => {
   }
 });
 
-// Events: Maus + Touch (iPad/Smartphone)
-sigCanvas.addEventListener("mousedown", startDraw);
-sigCanvas.addEventListener("mousemove", moveDraw);
-window.addEventListener("mouseup", endDraw);
 
-sigCanvas.addEventListener("touchstart", startDraw, { passive: false });
-sigCanvas.addEventListener("touchmove", moveDraw, { passive: false });
-window.addEventListener("touchend", endDraw, { passive: false });
+// Events: Pointer (Maus + Touch + Stift) – stabil auf Mobile
+sigCanvas.style.touchAction = "none";
+
+sigCanvas.addEventListener("pointerdown", startDraw);
+sigCanvas.addEventListener("pointermove", moveDraw);
+window.addEventListener("pointerup", endDraw);
+window.addEventListener("pointercancel", endDraw);
 
 
 function getSessionPayloadFromUi() {
